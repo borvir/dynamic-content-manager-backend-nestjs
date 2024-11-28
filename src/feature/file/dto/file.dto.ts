@@ -34,6 +34,10 @@ export class FileDto extends CoreDto {
 
   @IsString()
   @ApiProperty({ required: true, example: 'Name' })
+  url: string;
+
+  @IsString()
+  @ApiProperty({ required: true, example: 'Name' })
   size: number;
 
   static async fromEntity(entity: FileEntity): Promise<FileDto> {
@@ -46,8 +50,9 @@ export class FileDto extends CoreDto {
     itemDto.mimetype = entity.mimetype;
     itemDto.destination = entity.destination;
     itemDto.filename = entity.filename;
-    itemDto.path = entity.path;
+    // itemDto.path = 'http://localhost:3000/uploads/' + entity.filename;
     itemDto.size = entity.size;
+    itemDto.path = `http://localhost:3000/uploads/${entity.filename}`;
 
     return itemDto;
   }

@@ -33,5 +33,5 @@ export class FileEntity extends CoreEntity {
 
   @ManyToMany(() => Tag, (tag) => tag.files)
   @JoinTable()
-  tags: Tag[];
+  tags: Promise<Tag[]>;
 }

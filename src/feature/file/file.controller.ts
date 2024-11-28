@@ -1,9 +1,13 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Delete,
+  Get,
   Param,
+  ParseBoolPipe,
   Post,
+  Query,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
@@ -19,6 +23,7 @@ import {
   ApiOkResponse,
   ApiResponse,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/core/auth/auth/auth.guard';
 import { FileDto } from './dto/file.dto';
@@ -31,7 +36,36 @@ import { CurrentUser } from 'src/core/user/current-user.decorator';
 export class FileController {
   constructor(private readonly service: FileService) {}
 
-  @Post('file')
+  @Get('/getOwnFiles')
+  @ApiQuery({
+    name: 'withDeleted',
+    description: '',
+    type: Boolean,
+    isArray: false,
+    required: false,
+    example: false,
+  })
+  @ApiOkResponse({
+    description: '',
+    // type: TagDto,
+    isArray: true,
+  })
+  async getOwnItems(
+    @CurrentUser()
+    user: { userId: string; email: string },
+
+    @Query(
+      'withDeleted',
+      new DefaultValuePipe<string, string>('false'),
+      ParseBoolPipe,
+    )
+    includeDeleted: boolean,
+  ): Promise<FileDto[]> {
+    const items = await this.service.getOwnItems(includeDeleted, user.userId);
+    return items;
+  }
+
+  @Post('upload')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FilesInterceptor('files', 10, multerOptions))
   @ApiBody({
@@ -44,12 +78,14 @@ export class FileController {
             type: 'string',
             format: 'binary',
           },
+          description: 'Array of files to upload',
         },
-        tagIds: {
+        'tagIds[]': {
           type: 'array',
           items: {
             type: 'string',
           },
+          description: 'Array of tag IDs (strings)',
         },
       },
     },
@@ -61,9 +97,12 @@ export class FileController {
   })
   async uploadFiles(
     @UploadedFiles() files: Array<Express.Multer.File>,
-    @Body() tagIds: string[],
+    @Body() body: Record<string, any>,
     @CurrentUser() user: { userId: string; email: string },
   ) {
+    const tagIds = Array.isArray(body['tagIds[]'])
+      ? body['tagIds[]']
+      : [body['tagIds[]']];
     const fileDtos: FileDto[] = [];
     for (const file of files) {
       fileDtos.push(

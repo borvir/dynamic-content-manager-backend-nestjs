@@ -9,11 +9,19 @@ import { TypeOrmOptionsFactory } from './config/typeorm-options.factory';
 import { TextModule } from './feature/text/text.module';
 import { ViewModule } from './feature/view/view.module';
 import { FileModule } from './feature/file/file.module';
-
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 @Module({
   imports: [
     TypeOrmModule.forRoot(TypeOrmOptionsFactory.createTypeOrmOptions()),
     ConfigModule.forRoot({ isGlobal: true }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads/images'),
+      serveRoot: '/uploads',
+      serveStaticOptions: {
+        fallthrough: false,
+      },
+    }),
     TagModule,
     TextModule,
     AuthModule,

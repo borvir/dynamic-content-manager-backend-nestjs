@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { FileCreateDto } from './dto/file-create.dto';
 import { FileDto } from './dto/file.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Equal, Repository } from 'typeorm';
 import { FileEntity } from '../file/entities/file.entity';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -24,6 +24,24 @@ export class FileService {
     const entity = await this.repository.save(item);
     const ret = await this.repository.findOne({ where: { id: entity.id } });
     return FileDto.fromEntity(ret);
+  }
+
+  public async getOwnItems(
+    includeDeleted: boolean,
+    userId: string,
+  ): Promise<FileDto[]> {
+    const items = await this.repository.find({
+      where: { createdBy: Equal(userId) },
+      order: { changedAt: 'DESC' },
+      cache: true,
+      withDeleted: includeDeleted,
+      // relations: ['changedBy', 'createdBy'],
+    });
+    return Promise.all(
+      items.map(async (x) => {
+        return FileDto.fromEntity(x);
+      }),
+    );
   }
 
   async delete(fileId: string): Promise<any> {

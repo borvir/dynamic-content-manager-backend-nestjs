@@ -13,21 +13,26 @@ export class TagDto extends CoreDto {
   @ApiProperty({ required: true, example: 'Name' })
   files: FileDto[];
 
-  static async fromEntity(entity: Tag): Promise<TagDto> {
+  static async fromEntity(
+    entity: Tag,
+    withFiles: boolean = true,
+  ): Promise<TagDto> {
     const itemDto = new TagDto();
     await CoreDto.fromCoreEntity(entity, itemDto);
 
     itemDto.name = entity.name;
 
-    const files = await entity.files;
-    if (files) {
-      const fileDtos = await Promise.all(
-        files.map((file) => FileDto.fromEntity(file)),
-      );
-      itemDto.files = fileDtos.sort(
-        (a, b) =>
-          new Date(a.createdAt).getDate() - new Date(b.createdAt).getDate(),
-      );
+    if (withFiles) {
+      const files = await entity.files;
+      if (files) {
+        const fileDtos = await Promise.all(
+          files.map((file) => FileDto.fromEntity(file)),
+        );
+        itemDto.files = fileDtos.sort(
+          (a, b) =>
+            new Date(a.createdAt).getDate() - new Date(b.createdAt).getDate(),
+        );
+      }
     }
 
     return itemDto;

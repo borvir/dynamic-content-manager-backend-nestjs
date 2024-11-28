@@ -40,7 +40,7 @@ export class TagService {
     });
     return Promise.all(
       items.map(async (x) => {
-        return TagDto.fromEntity(x);
+        return TagDto.fromEntity(x, false);
       }),
     );
   }

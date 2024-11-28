@@ -5,6 +5,7 @@ import { AllExceptionsFilter } from './error.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableCors();
 
   const config = new DocumentBuilder()
     .setTitle('Dinamic Content Manager Backend')

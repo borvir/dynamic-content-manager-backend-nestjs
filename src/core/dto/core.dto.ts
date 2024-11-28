@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsDateString, IsUUID } from 'class-validator';
 import { CoreEntity } from '../entity/core.entity';
-// import { CoreUserDto } from '../user/dto/user.dto';
+import { UserLoginDto } from './user-login.dto';
+import { UserDto } from './user.dto';
 
 export class CoreDto {
   @ApiProperty({
@@ -40,8 +41,8 @@ export class CoreDto {
   //   @ApiProperty({ required: false, description: 'letzter Änderer' })
   //   changedBy: CoreUserDto;
 
-  //   @ApiProperty({ required: false, description: 'Ersteller' })
-  //   createdBy: CoreUserDto;
+  @ApiProperty({ required: false, description: 'Ersteller' })
+  createdBy: Promise<UserLoginDto>;
 
   static async fromCoreEntity(
     entity: CoreEntity,
@@ -56,8 +57,7 @@ export class CoreDto {
       dto.deletedAt = entity.deletedAt;
     }
 
-    // dto.changedBy = CoreUserDto.fromEntity(await entity.changedBy);
-    // dto.createdBy = CoreUserDto.fromEntity(await entity.createdBy);
+    dto.createdBy = UserDto.fromEntity(await entity.createdBy);
 
     return dto;
   }
