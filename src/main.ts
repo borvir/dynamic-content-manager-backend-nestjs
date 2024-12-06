@@ -1,15 +1,19 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { DataSource } from 'typeorm';
 import { AllExceptionsFilter } from './error.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
 
+  const dataSource = app.get(DataSource);
+  if (!dataSource.isInitialized) {
+    await dataSource.initialize();
+  }
   const config = new DocumentBuilder()
-    .setTitle('Dinamic Content Manager Backend')
-    // .setDescription('The cats API description')
+    .setTitle('Dynamic Content Manager Backend')
     .setVersion('1.0')
     .addBearerAuth()
     .build();

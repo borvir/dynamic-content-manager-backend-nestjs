@@ -16,13 +16,20 @@ export class FileService {
     private configService: ConfigService,
   ) {}
 
+  async findFileByHash(hash: string): Promise<FileEntity | null> {
+    return await this.repository.findOne({ where: { hash } });
+  }
+
   public async createItem(
     dto: FileCreateDto,
     creatorId: string,
   ): Promise<FileDto> {
+    console.log(dto, creatorId);
     const item = await FileCreateDto.toEntity(dto, creatorId);
     const entity = await this.repository.save(item);
-    const ret = await this.repository.findOne({ where: { id: entity.id } });
+    const ret = await this.repository.findOne({
+      where: { id: entity.id },
+    });
     return FileDto.fromEntity(ret);
   }
 
@@ -35,11 +42,10 @@ export class FileService {
       order: { changedAt: 'DESC' },
       cache: true,
       withDeleted: includeDeleted,
-      // relations: ['changedBy', 'createdBy'],
     });
     return Promise.all(
       items.map(async (x) => {
-        return FileDto.fromEntity(x);
+        return FileDto.fromEntity(x, true);
       }),
     );
   }

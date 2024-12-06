@@ -64,6 +64,45 @@ export class ViewController {
     return items;
   }
 
+  @Get('/getOwnView')
+  @ApiQuery({
+    name: 'withDeleted',
+    description: '',
+    type: Boolean,
+    isArray: false,
+    required: false,
+    example: false,
+  })
+  @ApiQuery({
+    name: 'filter',
+    type: 'string',
+    required: false,
+    description: 'Search term for view names',
+  })
+  @ApiOkResponse({
+    description: '',
+    type: ViewDto,
+    isArray: true,
+  })
+  async getOwnItems(
+    @Query(
+      'withDeleted',
+      new DefaultValuePipe<string, string>('false'),
+      ParseBoolPipe,
+    )
+    includeDeleted: boolean,
+    @CurrentUser()
+    user: { userId: string; email: string },
+    @Query('filter') filter: string,
+  ): Promise<ViewDto[]> {
+    const items = await this.service.getOwnItems(
+      includeDeleted,
+      user.userId,
+      filter,
+    );
+    return items;
+  }
+
   @Get('/:id')
   @ApiParam({ name: 'id', required: true, description: '', example: '1' })
   @ApiOkResponse({

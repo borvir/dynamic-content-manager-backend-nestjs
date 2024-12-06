@@ -38,9 +38,6 @@ export class CoreDto {
   @IsDateString()
   deletedAt: Date;
 
-  //   @ApiProperty({ required: false, description: 'letzter Änderer' })
-  //   changedBy: CoreUserDto;
-
   @ApiProperty({ required: false, description: 'Ersteller' })
   createdBy: Promise<UserLoginDto>;
 

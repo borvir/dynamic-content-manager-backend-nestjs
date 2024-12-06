@@ -2,7 +2,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsString } from 'class-validator';
 import { CoreCreateDto } from 'src/core/dto/core-create.dto';
 import { FileEntity } from '../entities/file.entity';
-import { getRepository } from 'typeorm';
 import { Tag } from 'src/feature/tag/entities/tag.entity';
 
 export class FileCreateDto extends CoreCreateDto {
@@ -11,8 +10,10 @@ export class FileCreateDto extends CoreCreateDto {
   file: Express.Multer.File;
 
   @IsArray()
-  @IsString({ each: true })
+  @IsString()
   tagIds: string[];
+
+  hash: string;
 
   static async toEntity(
     dto: FileCreateDto,
@@ -31,6 +32,7 @@ export class FileCreateDto extends CoreCreateDto {
     entity.filename = dto.file.filename;
     entity.path = dto.file.path;
     entity.size = dto.file.size;
+    entity.hash = dto.hash;
 
     if ('tagIds' in dto) {
       entity.tags = Promise.all(dto.tagIds.map((resId) => new Tag(resId)));

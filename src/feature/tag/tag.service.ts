@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { TagCreateDto } from './dto/tag-create.dto';
 import { TagEditDto } from './dto/tag-edit.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Equal, Repository } from 'typeorm';
+import { Equal, ILike, Repository } from 'typeorm';
 import { TagDto } from './dto/tag.dto';
 import { Tag } from './entities/tag.entity';
 
@@ -18,7 +18,6 @@ export class TagService {
       order: { changedAt: 'DESC' },
       cache: true,
       withDeleted: includeDeleted,
-      // relations: ["changedBy", "createdBy"]
     });
     return Promise.all(
       items.map(async (x) => {
@@ -30,17 +29,26 @@ export class TagService {
   public async getOwnItems(
     includeDeleted: boolean,
     userId: string,
+    filter?: string,
   ): Promise<TagDto[]> {
+    const baseFilter = {
+      createdBy: Equal(userId),
+    };
+
+    const nameFilter = filter ? { name: ILike(`%${filter}%`) } : {};
+
+    const finalFilter = { ...baseFilter, ...nameFilter };
+
     const items = await this.repository.find({
-      where: { createdBy: Equal(userId) },
+      where: finalFilter,
       order: { changedAt: 'DESC' },
       cache: true,
       withDeleted: includeDeleted,
-      // relations: ['changedBy', 'createdBy'],
     });
+
     return Promise.all(
       items.map(async (x) => {
-        return TagDto.fromEntity(x, false);
+        return TagDto.fromEntity(x, true);
       }),
     );
   }
@@ -90,9 +98,6 @@ export class TagService {
     }
     try {
       await this.repository.remove(entity);
-      // if (!deleteResult.affected) {
-      //     throw new NotFoundException(`Tag "${id}" not found`);
-      // }
       return 200;
     } catch (error) {
       const r = await this.repository.softDelete(id);
@@ -102,13 +107,5 @@ export class TagService {
         return 404;
       }
     }
-    // const canDelete = await this.validator.canDelete(id);
-    // if (canDelete) {
-    // } else {
-    //     const r = await this.repository.softDelete(id);
-    //     if (r.affected > 0) {
-    //         return 226;
-    //     }
-    // }
   }
 }

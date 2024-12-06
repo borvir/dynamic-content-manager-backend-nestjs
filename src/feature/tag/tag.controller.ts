@@ -73,23 +73,33 @@ export class TagController {
     required: false,
     example: false,
   })
+  @ApiQuery({
+    name: 'filter',
+    type: 'string',
+    required: false,
+    description: 'Search term for tag names',
+  })
   @ApiOkResponse({
     description: '',
     type: TagDto,
     isArray: true,
   })
   async getOwnItems(
-    @CurrentUser()
-    user: { userId: string; email: string },
-
     @Query(
       'withDeleted',
       new DefaultValuePipe<string, string>('false'),
       ParseBoolPipe,
     )
     includeDeleted: boolean,
+    @Query('filter') filter: string,
+    @CurrentUser()
+    user: { userId: string; email: string },
   ): Promise<TagDto[]> {
-    const items = await this.service.getOwnItems(includeDeleted, user.userId);
+    const items = await this.service.getOwnItems(
+      includeDeleted,
+      user.userId,
+      filter,
+    );
     return items;
   }
 

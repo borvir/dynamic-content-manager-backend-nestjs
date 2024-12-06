@@ -18,16 +18,18 @@ import { multerOptions } from 'src/config/multer.config';
 import {
   ApiTags,
   ApiBearerAuth,
-  ApiBody,
   ApiConsumes,
   ApiOkResponse,
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBody,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/core/auth/auth/auth.guard';
 import { FileDto } from './dto/file.dto';
 import { CurrentUser } from 'src/core/user/current-user.decorator';
+import * as fs from 'fs/promises';
+import * as crypto from 'crypto';
 
 @Controller('file')
 @ApiTags('file')
@@ -47,7 +49,7 @@ export class FileController {
   })
   @ApiOkResponse({
     description: '',
-    // type: TagDto,
+    type: FileDto,
     isArray: true,
   })
   async getOwnItems(
@@ -67,8 +69,8 @@ export class FileController {
 
   @Post('upload')
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FilesInterceptor('files', 10, multerOptions))
   @ApiBody({
+    description: 'File upload data',
     schema: {
       type: 'object',
       properties: {
@@ -78,40 +80,54 @@ export class FileController {
             type: 'string',
             format: 'binary',
           },
-          description: 'Array of files to upload',
         },
         'tagIds[]': {
           type: 'array',
           items: {
             type: 'string',
           },
-          description: 'Array of tag IDs (strings)',
+          description: 'Array of tag IDs associated with the files',
         },
       },
     },
   })
-  @ApiOkResponse({
-    description: 'Created successfully',
-    type: FileDto,
-    isArray: false,
-  })
+  @UseInterceptors(FilesInterceptor('files', 10, multerOptions))
   async uploadFiles(
     @UploadedFiles() files: Array<Express.Multer.File>,
     @Body() body: Record<string, any>,
     @CurrentUser() user: { userId: string; email: string },
   ) {
-    const tagIds = Array.isArray(body['tagIds[]'])
-      ? body['tagIds[]']
-      : [body['tagIds[]']];
+    const tagIds = body.tagIds[0].split(',');
+
     const fileDtos: FileDto[] = [];
+
     for (const file of files) {
-      fileDtos.push(
-        await this.service.createItem(
-          { file: file, tagIds: tagIds },
-          user.userId,
-        ),
+      const fileContent = await fs.readFile(file.path);
+
+      const hash = crypto
+        .createHash('sha256')
+        .update(fileContent)
+        .digest('hex');
+
+      const existingFile = await this.service.findFileByHash(hash);
+      if (existingFile) {
+        throw new Error(
+          `Duplicate file detected. File with hash ${hash} already exists.`,
+        );
+      }
+
+      const fileDto = await this.service.createItem(
+        {
+          file,
+          tagIds,
+          hash,
+        },
+        user.userId,
       );
+
+      fileDtos.push(fileDto);
     }
+
     return fileDtos;
   }
 
@@ -119,18 +135,13 @@ export class FileController {
   @ApiParam({
     name: 'id',
     required: true,
-    description: 'Die ID des Tag der gelöscht werden soll.',
+    description: 'Delete tags',
     example: '1',
   })
-  @ApiOkResponse({ description: 'Der Tag wurde erfolgreich entfernt.' })
+  @ApiOkResponse({ description: 'Tag deleted' })
   @ApiResponse({
     status: 404,
-    description: 'Der zu löschende Tag wurde nicht gefunden.',
-  })
-  @ApiResponse({
-    status: 226,
-    description:
-      'Der zu löschende Tag ist noch in Benutzung und wurde inaktiv gesetzt.',
+    description: 'Tag not found.',
   })
   async delete(@Param('id') id: string) {
     const code = await this.service.delete(id);

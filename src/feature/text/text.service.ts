@@ -18,7 +18,6 @@ export class TextService {
       order: { changedAt: 'DESC' },
       cache: true,
       withDeleted: includeDeleted,
-      // relations: ["changedBy", "createdBy"]
     });
     return Promise.all(
       items.map(async (x) => {
@@ -72,9 +71,6 @@ export class TextService {
     }
     try {
       await this.repository.remove(entity);
-      // if (!deleteResult.affected) {
-      //     throw new NotFoundException(`Text "${id}" not found`);
-      // }
       return 200;
     } catch (error) {
       const r = await this.repository.softDelete(id);
@@ -84,13 +80,5 @@ export class TextService {
         return 404;
       }
     }
-    // const canDelete = await this.validator.canDelete(id);
-    // if (canDelete) {
-    // } else {
-    //     const r = await this.repository.softDelete(id);
-    //     if (r.affected > 0) {
-    //         return 226;
-    //     }
-    // }
   }
 }

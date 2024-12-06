@@ -31,7 +31,10 @@ export class FileEntity extends CoreEntity {
   @Column({ unique: false })
   size: number;
 
-  @ManyToMany(() => Tag, (tag) => tag.files)
+  @ManyToMany(() => Tag, (tag) => tag.files, { lazy: true, cascade: true })
   @JoinTable()
   tags: Promise<Tag[]>;
+
+  @Column({ unique: true, default: null })
+  hash: string;
 }

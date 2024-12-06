@@ -1,16 +1,15 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { TagModule } from './feature/tag/tag.module';
 import { AuthModule } from './core/auth/auth/auth.module';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TypeOrmOptionsFactory } from './config/typeorm-options.factory';
-import { TextModule } from './feature/text/text.module';
 import { ViewModule } from './feature/view/view.module';
 import { FileModule } from './feature/file/file.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { MailerModule } from '@nestjs-modules/mailer';
+
 @Module({
   imports: [
     TypeOrmModule.forRoot(TypeOrmOptionsFactory.createTypeOrmOptions()),
@@ -22,13 +21,30 @@ import { join } from 'path';
         fallthrough: false,
       },
     }),
+    MailerModule.forRootAsync({
+      useFactory: (configService: ConfigService) => ({
+        transport: {
+          host: configService.get<string>('MAIL_HOST'),
+          port: configService.get<number>('MAIL_PORT'),
+          secure: false,
+          auth: {
+            user: configService.get<string>('MAIL_USER'),
+            pass: configService.get<string>('MAIL_PASSWORD'),
+          },
+        },
+        defaults: {
+          from: `"No Reply" <${configService.get<string>('MAIL_FROM')}>`,
+        },
+      }),
+      inject: [ConfigService],
+    }),
+
     TagModule,
-    TextModule,
     AuthModule,
     ViewModule,
     FileModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

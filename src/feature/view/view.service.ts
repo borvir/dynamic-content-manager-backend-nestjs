@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ViewCreateDto } from './dto/view-create.dto';
 import { ViewEditDto } from './dto/view-edit.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Equal, ILike, Repository } from 'typeorm';
 import { ViewDto } from './dto/view.dto';
 import { View } from './entities/view.entity';
 
@@ -18,11 +18,37 @@ export class ViewService {
       order: { changedAt: 'DESC' },
       cache: true,
       withDeleted: includeDeleted,
-      // relations: ["changedBy", "createdBy"]
     });
     return Promise.all(
       items.map(async (x) => {
         return ViewDto.fromEntity(x);
+      }),
+    );
+  }
+
+  public async getOwnItems(
+    includeDeleted: boolean,
+    userId: string,
+    filter?: string,
+  ): Promise<ViewDto[]> {
+    const baseFilter = {
+      createdBy: Equal(userId),
+    };
+
+    const nameFilter = filter ? { name: ILike(`%${filter}%`) } : {};
+
+    const finalFilter = { ...baseFilter, ...nameFilter };
+
+    const items = await this.repository.find({
+      where: finalFilter,
+      order: { changedAt: 'DESC' },
+      cache: true,
+      withDeleted: includeDeleted,
+    });
+
+    return Promise.all(
+      items.map(async (x) => {
+        return ViewDto.fromEntity(x, true);
       }),
     );
   }
@@ -72,9 +98,6 @@ export class ViewService {
     }
     try {
       await this.repository.remove(entity);
-      // if (!deleteResult.affected) {
-      //     throw new NotFoundException(`View "${id}" not found`);
-      // }
       return 200;
     } catch (error) {
       const r = await this.repository.softDelete(id);
@@ -84,13 +107,5 @@ export class ViewService {
         return 404;
       }
     }
-    // const canDelete = await this.validator.canDelete(id);
-    // if (canDelete) {
-    // } else {
-    //     const r = await this.repository.softDelete(id);
-    //     if (r.affected > 0) {
-    //         return 226;
-    //     }
-    // }
   }
 }

@@ -1,3 +1,4 @@
+import { Tag } from 'src/feature/tag/entities/tag.entity';
 import {
   Entity,
   Column,
@@ -43,4 +44,9 @@ export class User {
 
   @DeleteDateColumn()
   deletedAt?: Date;
+
+  @Column({ default: false })
+  isConfirmed: boolean;
+
+  tags: Promise<Tag[]>;
 }

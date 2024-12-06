@@ -38,10 +38,9 @@ export class TypeOrmOptionsFactory {
       },
       entities: [__dirname + '/../**/*.entity.{js,ts}'],
       synchronize: process.env.DATABASE_ORM_SYNC === 'true' || true,
-      // disable sync -> sync entities only via pumpgun
-      // synchronize: false,
       migrations: [
-        process.env.DATABASE_MIGRATIONS_PATH || 'dist/migrations/*{.ts,.js}',
+        process.env.DATABASE_MIGRATIONS_PATH ||
+          'dist/migrations/src/migrations/*{.ts,.js}',
       ],
       migrationsTableName: 'migrations_typeorm',
       migrationsRun: process.env.DATABASE_ORM_MIGRATION === 'true' || true,
